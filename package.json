@@ -1,16 +1,14 @@
 {
   "name": "khata-server",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "main": "server.js",
-  "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
-    "vercel-build": "echo 'No build step required for plain JS'"
-  },
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
