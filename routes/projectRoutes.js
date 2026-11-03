@@ -8,6 +8,10 @@ const router = Router();
 
 router.use(protect);
 router.route('/').get(c.getProjects).post(validate(schemas.project), c.createProject);
+router.patch('/:id/status', validate(schemas.projectStatus), c.setStatus);
+router.post('/:id/tasks', validate(schemas.task), c.addTask);
+router.patch('/:id/tasks/:taskId', validate(schemas.taskUpdate), c.updateTask);
+router.delete('/:id/tasks/:taskId', c.deleteTask);
 router.route('/:id').get(c.getProject).put(validate(schemas.project), c.updateProject).delete(c.deleteProject);
 
 export default router;

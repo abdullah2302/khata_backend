@@ -8,7 +8,13 @@ const projectSchema = new mongoose.Schema(
     description: String,
     status: { type: String, enum: ['lead', 'in-progress', 'completed', 'cancelled'], default: 'lead' },
     budget: { type: Number, min: 0, default: 0 },
-    deadline: Date
+    deadline: Date,
+    tasks: [
+      {
+        title: { type: String, required: true, trim: true, maxlength: 120 },
+        done: { type: Boolean, default: false }
+      }
+    ]
   },
   { timestamps: true }
 );

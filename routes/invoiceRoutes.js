@@ -9,6 +9,7 @@ const router = Router();
 router.use(protect);
 router.route('/').get(c.getInvoices).post(validate(schemas.invoice), c.createInvoice);
 router.patch('/:id/paid', c.markInvoicePaid);
+router.post('/:id/duplicate', c.duplicateInvoice);
 router.route('/:id').get(c.getInvoice).put(validate(schemas.invoice), c.updateInvoice).delete(c.deleteInvoice);
 
 export default router;

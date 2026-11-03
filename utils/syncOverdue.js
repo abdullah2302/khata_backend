@@ -1,5 +1,11 @@
 import Invoice from '../models/Invoice.js';
+import { startOfToday } from './dates.js';
 
-// Pending invoices whose due date has passed become "overdue" automatically.
-export default (owner) =>
-  Invoice.updateMany({ owner, status: 'pending', dueDate: { $lt: new Date() } }, { $set: { status: 'overdue' } });
+// Keeps the overdue flag honest in both directions:
+// pending -> overdue once the due date has fully passed,
+// overdue -> pending again if the due date was moved to today or later.
+export default async (owner) => {
+  const today = startOfToday();
+  await Invoice.updateMany({ owner, status: 'pending', dueDate: { $lt: today } }, { $set: { status: 'overdue' } });
+  await Invoice.updateMany({ owner, status: 'overdue', dueDate: { $gte: today } }, { $set: { status: 'pending' } });
+};

@@ -3,6 +3,9 @@ import Invoice from '../models/Invoice.js';
 import Project from '../models/Project.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import syncOverdue from '../utils/syncOverdue.js';
+import { startOfToday } from '../utils/dates.js';
+import { round2 } from '../utils/money.js';
+import { buildFinance, financeByProject } from '../utils/projectFinance.js';
 
 const ownerId = (req) => new mongoose.Types.ObjectId(req.user._id);
 
@@ -91,9 +94,9 @@ export const projectsByStatus = asyncHandler(async (req, res) => {
 // GET /api/stats/upcoming  -> pending invoices due in the next 14 days
 export const upcoming = asyncHandler(async (req, res) => {
   await syncOverdue(req.user._id);
-  const now = new Date();
-  const in14 = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-  const data = await Invoice.find({ owner: req.user._id, status: 'pending', dueDate: { $gte: now, $lte: in14 } })
+  const start = startOfToday();
+  const in14 = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const data = await Invoice.find({ owner: req.user._id, status: 'pending', dueDate: { $gte: start, $lte: in14 } })
     .sort('dueDate')
     .limit(5)
     .populate('client', 'name');
@@ -119,4 +122,23 @@ export const billedVsPaid = asyncHandler(async (req, res) => {
     paid: paid.find((p) => p._id === i + 1)?.total || 0
   }));
   res.json({ year, data });
+});
+
+// GET /api/stats/budget-usage -> budget vs invoiced per project, plus unbilled budget on open projects
+export const budgetUsage = asyncHandler(async (req, res) => {
+  await syncOverdue(req.user._id);
+  const projects = await Project.find({ owner: req.user._id, budget: { $gt: 0 }, status: { $ne: 'cancelled' } }).populate('client', 'name');
+  const totals = await financeByProject(req.user._id, projects.map((p) => p._id));
+
+  const items = projects.map((p) => ({
+    projectId: p._id,
+    title: p.title,
+    clientName: p.client?.name,
+    status: p.status,
+    ...buildFinance(p.budget, totals.get(String(p._id)))
+  }));
+  const toInvoice = round2(
+    items.filter((i) => i.status === 'lead' || i.status === 'in-progress').reduce((sum, i) => sum + Math.max(i.remaining, 0), 0)
+  );
+  res.json({ toInvoice, items: items.sort((a, b) => b.budget - a.budget).slice(0, 8) });
 });

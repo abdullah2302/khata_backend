@@ -11,6 +11,7 @@ router.get('/pending-by-client', s.pendingByClient);
 router.get('/top-clients', s.topClients);
 router.get('/projects-by-status', s.projectsByStatus);
 router.get('/upcoming', s.upcoming);
+router.get('/budget-usage', s.budgetUsage);
 router.get('/billed-vs-paid', s.billedVsPaid);
 
 export default router;

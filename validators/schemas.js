@@ -52,7 +52,20 @@ export const project = Joi.object({
 export const invoice = Joi.object({
   client: id.required(),
   project: id,
-  amount: Joi.number().min(0).required(),
+  amount: Joi.number().positive().required(),
   status: Joi.string().valid('pending', 'paid', 'overdue'),
   dueDate: Joi.date().required()
 });
+
+export const projectStatus = Joi.object({
+  status: Joi.string().valid('lead', 'in-progress', 'completed', 'cancelled').required()
+});
+
+export const task = Joi.object({
+  title: Joi.string().trim().min(1).max(120).required()
+});
+
+export const taskUpdate = Joi.object({
+  done: Joi.boolean(),
+  title: Joi.string().trim().min(1).max(120)
+}).min(1);
