@@ -5,6 +5,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import httpError from '../utils/httpError.js';
 import syncOverdue from '../utils/syncOverdue.js';
 import { paginate, searchFilter } from '../utils/query.js';
+import { financeByClient, emptyClientFinance } from '../utils/clientFinance.js';
 
 const findOwned = async (req) => {
   const client = await Client.findOne({ _id: req.params.id, owner: req.user._id });
@@ -15,9 +16,13 @@ const findOwned = async (req) => {
 // GET /api/clients?page=1&limit=10&search=ali&sort=name
 export const getClients = asyncHandler(async (req, res) => {
   const filter = { owner: req.user._id, ...searchFilter(req.query.search, ['name', 'company', 'email']) };
-  res.json(await paginate(Client, filter, req.query));
+  const result = await paginate(Client, filter, req.query);
+  const totals = await financeByClient(req.user._id, result.items.map((c) => c._id));
+  res.json({
+    ...result,
+    items: result.items.map((c) => ({ ...c.toObject(), finance: totals.get(String(c._id)) ?? emptyClientFinance }))
+  });
 });
-
 export const getClient = asyncHandler(async (req, res) => res.json(await findOwned(req)));
 
 // GET /api/clients/:id/overview -> client + their projects, invoices and totals
@@ -61,3 +66,4 @@ export const deleteClient = asyncHandler(async (req, res) => {
   await client.deleteOne();
   res.json({ message: 'Client deleted' });
 });
+
