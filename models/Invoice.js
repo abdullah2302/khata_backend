@@ -7,6 +7,7 @@ const invoiceSchema = new mongoose.Schema(
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
     invoiceNumber: { type: String, required: true, trim: true },
     amount: { type: Number, required: true, min: 0 },
+    percent: { type: Number, min: 0 },
     status: { type: String, enum: ['pending', 'paid', 'overdue'], default: 'pending' },
     dueDate: { type: Date, required: true },
     paidAt: Date
@@ -16,6 +17,7 @@ const invoiceSchema = new mongoose.Schema(
 
 // One invoice number per user
 invoiceSchema.index({ owner: 1, invoiceNumber: 1 }, { unique: true });
+
 
 // Keep paidAt in sync with status
 invoiceSchema.pre('save', function (next) {

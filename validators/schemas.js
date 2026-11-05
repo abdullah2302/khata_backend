@@ -45,18 +45,32 @@ export const project = Joi.object({
   title: Joi.string().trim().min(2).required(),
   description: text,
   status: Joi.string().valid('lead', 'in-progress', 'completed', 'cancelled'),
-  budget: Joi.number().min(0),
+  // the project price (budget): every invoice for the project is created from it
+  budget: Joi.number().positive().required().messages({
+    'any.required': 'Enter the project price',
+    'number.base': 'The project price must be a number',
+    'number.positive': 'The project price must be more than 0'
+  }),
   deadline: Joi.date()
 });
 
 export const invoice = Joi.object({
-  client: id.required(),
-  project: id,
-  amount: Joi.number().positive().required(),
-  status: Joi.string().valid('pending', 'paid', 'overdue'),
+  project: id.required().messages({ 'any.required': 'Choose the project this invoice is for' }),
+  share: Joi.alternatives()
+    .try(Joi.number().greater(0).max(100), Joi.string().valid('rest'))
+    .required()
+    .messages({
+      'any.required': 'Choose how much of the project price this invoice is for',
+      'alternatives.match': 'The share must be a percent between 0 and 100, or "rest"'
+    }),
+  status: Joi.string().valid('pending', 'paid'),
   dueDate: Joi.date().required()
 });
 
+export const invoiceUpdate = Joi.object({
+  status: Joi.string().valid('pending', 'paid').required(),
+  dueDate: Joi.date().required()
+});
 export const projectStatus = Joi.object({
   status: Joi.string().valid('lead', 'in-progress', 'completed', 'cancelled').required()
 });

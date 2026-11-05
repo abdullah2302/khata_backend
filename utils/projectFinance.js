@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import Invoice from '../models/Invoice.js';
-import httpError from './httpError.js';
 import { round2 } from './money.js';
 
 const toId = (id) => new mongoose.Types.ObjectId(id);
@@ -20,6 +19,7 @@ export const buildFinance = (budget, { invoiced = 0, paid = 0, count = 0 } = {})
     paid: pd,
     outstanding: round2(inv - pd),
     remaining: b > 0 ? round2(b - inv) : null,
+     balance: b > 0 ? round2(b - pd) : null, // budget - paid: what the client still has to pay
     percentInvoiced: b > 0 ? Math.round((inv / b) * 100) : null,
     count
   };
@@ -50,15 +50,4 @@ export const invoicedTotal = async (owner, projectId, excludeInvoiceId) => {
   return round2(row?.total || 0);
 };
 
-// Rejects an invoice that would push a project past its budget. A budget of 0 means "no limit".
-export const assertWithinBudget = async (owner, project, amount, excludeInvoiceId) => {
-  if (!project || !(project.budget > 0)) return;
-  const already = await invoicedTotal(owner, project._id, excludeInvoiceId);
-  const over = round2(already + Number(amount) - project.budget);
-  if (over > 0) {
-    throw httpError(
-      400,
-      `This invoice is ${over} over the project budget (budget ${project.budget}, already invoiced ${already}). Raise the project budget first.`
-    );
-  }
-};
+
